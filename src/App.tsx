@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import { useAuth } from './hooks/useAuth'
 import { useWorkEntries } from './hooks/useWorkEntries'
+import { useUserSettings } from './hooks/useUserSettings'
+import { calculateNetWages } from './utils/mpf'
 import { Login } from './components/Login'
 import { Calendar } from './components/Calendar'
 import { DayModal } from './components/DayModal'
@@ -19,9 +21,28 @@ function App() {
     deleteEntry
   } = useWorkEntries(user?.uid || null)
 
+  // User settings
+  const { settings, updateSettings } = useUserSettings(user?.uid || null)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showDropdown])
 
   const handleDeleteEntry = async (id: string) => {
     try {
@@ -43,19 +64,23 @@ function App() {
   const currentYear = currentMonth.getFullYear()
   const currentMonthNum = currentMonth.getMonth()
 
-  const monthTotal = entries
+  const monthTotalGross = entries
     .filter((entry) => {
       const entryDate = new Date(entry.date)
       return entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonthNum
     })
     .reduce((sum, entry) => sum + entry.totalWages, 0)
 
-  const yearTotal = entries
+  const yearTotalGross = entries
     .filter((entry) => {
       const entryDate = new Date(entry.date)
       return entryDate.getFullYear() === currentYear
     })
     .reduce((sum, entry) => sum + entry.totalWages, 0)
+
+  // Apply MPF deduction if enabled
+  const monthTotal = calculateNetWages(monthTotalGross, settings.deductMPF)
+  const yearTotal = calculateNetWages(yearTotalGross, settings.deductMPF)
 
   const entriesForSelectedDate = selectedDate
     ? entries.filter((entry) => entry.date === selectedDate)
@@ -95,17 +120,37 @@ function App() {
           </a>
           
           <div className="user-info">
-            {user.photoURL && (
-              <img
-                src={user.photoURL}
-                alt={user.displayName || 'User'}
-                className="user-avatar"
-              />
-            )}
-            <span className="user-name">{user.displayName || user.email}</span>
-            <button onClick={signOut} className="logout-button">
-              Logout
-            </button>
+            <div className="user-menu-container" ref={dropdownRef}>
+              <div className="user-trigger" onClick={() => setShowDropdown(!showDropdown)}>
+                {user.photoURL && (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName || 'User'}
+                    className="user-avatar"
+                  />
+                )}
+                <span className="user-name">{user.displayName || user.email}</span>
+              </div>
+              {showDropdown && (
+                <div className="user-dropdown">
+                  <div className="dropdown-divider"></div>
+                  <div className="dropdown-item" onClick={(e) => e.stopPropagation()}>
+                    <label className="mpf-toggle">
+                      <input
+                        type="checkbox"
+                        checked={settings.deductMPF}
+                        onChange={(e) => updateSettings({ deductMPF: e.target.checked })}
+                      />
+                      <span>Deduct MPF</span>
+                    </label>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <div className="dropdown-item" onClick={signOut}>
+                    <span>Logout</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -120,7 +165,7 @@ function App() {
                 {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
               </div>
               <div className="total-amount-large">${monthTotal.toFixed(2)}</div>
-              <div className="total-subtitle">Monthly Total</div>
+              <div className="total-subtitle">Monthly Total{settings.deductMPF && ' (MPF Deducted)'}</div>
             </div>
             
             <div className="total-divider"></div>
@@ -128,7 +173,9 @@ function App() {
             <div className="total-section">
               <div className="total-label">{currentYear}</div>
               <div className="total-amount-large">${yearTotal.toFixed(2)}</div>
-              <div className="total-subtitle">Year Total</div>
+              <div className="total-subtitle">
+                Year Total{settings.deductMPF && ' (MPF Deducted)'}
+              </div>
             </div>
           </div>
         </div>
