@@ -1,40 +1,45 @@
 import { useState } from 'react'
 import './App.css'
-
-interface WorkEntry {
-  id: number
-  workType: string
-  startTime: string
-  endTime: string
-  hourlyWage: number
-  totalWages: number
-  hoursWorked: number
-}
+import { useAuth } from './hooks/useAuth'
+import { useWorkEntries } from './hooks/useWorkEntries'
+import { Login } from './components/Login'
 
 function App() {
+  // Authentication
+  const { user, loading: authLoading, signOut } = useAuth()
+
+  // Firestore data
+  const {
+    entries,
+    loading: entriesLoading,
+    error: entriesError,
+    addEntry,
+    deleteEntry
+  } = useWorkEntries(user?.uid || null)
+
+  // Form state
   const [workType, setWorkType] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [hourlyWage, setHourlyWage] = useState('')
-  const [entries, setEntries] = useState<WorkEntry[]>([])
 
   const calculateHours = (start: string, end: string): number => {
     if (!start || !end) return 0
     const startDate = new Date(`1970-01-01T${start}`)
     const endDate = new Date(`1970-01-01T${end}`)
-    
+
     // Handle overnight shifts
     if (endDate < startDate) {
       endDate.setDate(endDate.getDate() + 1)
     }
-    
+
     const diff = endDate.getTime() - startDate.getTime()
     return diff / (1000 * 60 * 60)
   }
 
-  const handleAddEntry = (e: React.FormEvent) => {
+  const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!workType || !startTime || !endTime || !hourlyWage) {
       alert('Please fill in all fields')
       return
@@ -54,8 +59,7 @@ function App() {
 
     const totalWages = hours * wage
 
-    const newEntry: WorkEntry = {
-      id: Date.now(),
+    const newEntry = {
       workType,
       startTime,
       endTime,
@@ -64,24 +68,65 @@ function App() {
       hoursWorked: hours
     }
 
-    setEntries([...entries, newEntry])
-    
-    // Reset form
-    setWorkType('')
-    setStartTime('')
-    setEndTime('')
-    setHourlyWage('')
+    try {
+      await addEntry(newEntry)
+
+      // Reset form
+      setWorkType('')
+      setStartTime('')
+      setEndTime('')
+      setHourlyWage('')
+    } catch (error) {
+      alert('Failed to add entry. Please try again.')
+    }
   }
 
-  const handleDeleteEntry = (id: number) => {
-    setEntries(entries.filter(entry => entry.id !== id))
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      await deleteEntry(id)
+    } catch (error) {
+      alert('Failed to delete entry. Please try again.')
+    }
   }
 
   const grandTotal = entries.reduce((sum, entry) => sum + entry.totalWages, 0)
 
+  // Show loading screen during initial auth check
+  if (authLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    )
+  }
+
+  // Show login screen if not authenticated
+  if (!user) {
+    return <Login />
+  }
+
+  // Main app (authenticated users only)
   return (
     <div className="app">
       <div className="container">
+        {/* User header with profile and logout */}
+        <div className="user-header">
+          <div className="user-info">
+            {user.photoURL && (
+              <img
+                src={user.photoURL}
+                alt={user.displayName || 'User'}
+                className="user-avatar"
+              />
+            )}
+            <span className="user-name">{user.displayName || user.email}</span>
+          </div>
+          <button onClick={signOut} className="logout-button">
+            Logout
+          </button>
+        </div>
+
         <h1>💰 Wages Calculator</h1>
         <p className="subtitle">Track your work hours and calculate total earnings</p>
 
@@ -141,6 +186,18 @@ function App() {
           </button>
         </form>
 
+        {/* Show loading state for entries */}
+        {entriesLoading && (
+          <div className="entries-loading">Loading your work entries...</div>
+        )}
+
+        {/* Show error if any */}
+        {entriesError && (
+          <div className="error-message">
+            Error loading entries. Please refresh the page.
+          </div>
+        )}
+
         {entries.length > 0 && (
           <div className="results">
             <h2>Work Entries</h2>
@@ -186,7 +243,7 @@ function App() {
           </div>
         )}
 
-        {entries.length === 0 && (
+        {!entriesLoading && entries.length === 0 && (
           <div className="empty-state">
             <p>📝 No work entries yet. Add your first entry above!</p>
           </div>
