@@ -3,6 +3,8 @@ import './App.css'
 import { useAuth } from './hooks/useAuth'
 import { useWorkEntries } from './hooks/useWorkEntries'
 import { Login } from './components/Login'
+import { Calendar } from './components/Calendar'
+import { DayModal } from './components/DayModal'
 
 function App() {
   // Authentication
@@ -17,69 +19,9 @@ function App() {
     deleteEntry
   } = useWorkEntries(user?.uid || null)
 
-  // Form state
-  const [workType, setWorkType] = useState('')
-  const [startTime, setStartTime] = useState('')
-  const [endTime, setEndTime] = useState('')
-  const [hourlyWage, setHourlyWage] = useState('')
-
-  const calculateHours = (start: string, end: string): number => {
-    if (!start || !end) return 0
-    const startDate = new Date(`1970-01-01T${start}`)
-    const endDate = new Date(`1970-01-01T${end}`)
-
-    // Handle overnight shifts
-    if (endDate < startDate) {
-      endDate.setDate(endDate.getDate() + 1)
-    }
-
-    const diff = endDate.getTime() - startDate.getTime()
-    return diff / (1000 * 60 * 60)
-  }
-
-  const handleAddEntry = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!workType || !startTime || !endTime || !hourlyWage) {
-      alert('Please fill in all fields')
-      return
-    }
-
-    const wage = parseFloat(hourlyWage)
-    if (wage <= 0) {
-      alert('Hourly wage must be greater than 0')
-      return
-    }
-
-    const hours = calculateHours(startTime, endTime)
-    if (hours <= 0) {
-      alert('End time must be after start time')
-      return
-    }
-
-    const totalWages = hours * wage
-
-    const newEntry = {
-      workType,
-      startTime,
-      endTime,
-      hourlyWage: wage,
-      totalWages,
-      hoursWorked: hours
-    }
-
-    try {
-      await addEntry(newEntry)
-
-      // Reset form
-      setWorkType('')
-      setStartTime('')
-      setEndTime('')
-      setHourlyWage('')
-    } catch (error) {
-      alert('Failed to add entry. Please try again.')
-    }
-  }
+  // Calendar state
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const handleDeleteEntry = async (id: string) => {
     try {
@@ -89,7 +31,35 @@ function App() {
     }
   }
 
-  const grandTotal = entries.reduce((sum, entry) => sum + entry.totalWages, 0)
+  const handleDateClick = (date: string) => {
+    setSelectedDate(date)
+  }
+
+  const handleCloseModal = () => {
+    setSelectedDate(null)
+  }
+
+  // Calculate totals for current month and year
+  const currentYear = currentMonth.getFullYear()
+  const currentMonthNum = currentMonth.getMonth()
+
+  const monthTotal = entries
+    .filter((entry) => {
+      const entryDate = new Date(entry.date)
+      return entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonthNum
+    })
+    .reduce((sum, entry) => sum + entry.totalWages, 0)
+
+  const yearTotal = entries
+    .filter((entry) => {
+      const entryDate = new Date(entry.date)
+      return entryDate.getFullYear() === currentYear
+    })
+    .reduce((sum, entry) => sum + entry.totalWages, 0)
+
+  const entriesForSelectedDate = selectedDate
+    ? entries.filter((entry) => entry.date === selectedDate)
+    : []
 
   // Show loading screen during initial auth check
   if (authLoading) {
@@ -110,8 +80,20 @@ function App() {
   return (
     <div className="app">
       <div className="container">
-        {/* User header with profile and logout */}
-        <div className="user-header">
+        {/* Header with GitHub and user info */}
+        <header className="app-header">
+          <a
+            href="https://github.com/mable-pmyip/wages-calculator"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="github-link"
+            aria-label="View source on GitHub"
+          >
+            <svg width="32" height="32" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+          </a>
+          
           <div className="user-info">
             {user.photoURL && (
               <img
@@ -121,75 +103,35 @@ function App() {
               />
             )}
             <span className="user-name">{user.displayName || user.email}</span>
+            <button onClick={signOut} className="logout-button">
+              Logout
+            </button>
           </div>
-          <button onClick={signOut} className="logout-button">
-            Logout
-          </button>
-        </div>
+        </header>
 
         <h1>💰 Wages Calculator</h1>
         <p className="subtitle">Track your work hours and calculate total earnings</p>
 
-        <form onSubmit={handleAddEntry} className="form">
-          <div className="form-group">
-            <label htmlFor="workType">Type of Work</label>
-            <input
-              id="workType"
-              type="text"
-              value={workType}
-              onChange={(e) => setWorkType(e.target.value)}
-              placeholder="e.g., Freelance, Part-time, Contract"
-              required
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="startTime">Start Time</label>
-              <input
-                id="startTime"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                required
-              />
+        {/* Total earnings card at the top */}
+        <div className="total-card">
+          <div className="totals-grid">
+            <div className="total-section">
+              <div className="total-label">
+                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </div>
+              <div className="total-amount-large">${monthTotal.toFixed(2)}</div>
+              <div className="total-subtitle">Monthly Total</div>
             </div>
-
-            <div className="form-group">
-              <label htmlFor="endTime">End Time</label>
-              <input
-                id="endTime"
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                required
-              />
+            
+            <div className="total-divider"></div>
+            
+            <div className="total-section">
+              <div className="total-label">{currentYear}</div>
+              <div className="total-amount-large">${yearTotal.toFixed(2)}</div>
+              <div className="total-subtitle">Year Total</div>
             </div>
           </div>
-
-          <div className="form-group">
-            <label htmlFor="hourlyWage">Hourly Wage ($)</label>
-            <input
-              id="hourlyWage"
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={hourlyWage}
-              onChange={(e) => setHourlyWage(e.target.value)}
-              placeholder="e.g., 25.00"
-              required
-            />
-          </div>
-
-          <button type="submit" className="add-button">
-            + Add Work Entry
-          </button>
-        </form>
-
-        {/* Show loading state for entries */}
-        {entriesLoading && (
-          <div className="entries-loading">Loading your work entries...</div>
-        )}
+        </div>
 
         {/* Show error if any */}
         {entriesError && (
@@ -198,55 +140,27 @@ function App() {
           </div>
         )}
 
-        {entries.length > 0 && (
-          <div className="results">
-            <h2>Work Entries</h2>
-            <div className="entries-list">
-              {entries.map((entry) => (
-                <div key={entry.id} className="entry-card">
-                  <div className="entry-header">
-                    <h3>{entry.workType}</h3>
-                    <button
-                      onClick={() => handleDeleteEntry(entry.id)}
-                      className="delete-button"
-                      aria-label="Delete entry"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="entry-details">
-                    <div className="detail">
-                      <span className="label">Time:</span>
-                      <span>{entry.startTime} - {entry.endTime}</span>
-                    </div>
-                    <div className="detail">
-                      <span className="label">Hours:</span>
-                      <span>{entry.hoursWorked.toFixed(2)}h</span>
-                    </div>
-                    <div className="detail">
-                      <span className="label">Rate:</span>
-                      <span>${entry.hourlyWage.toFixed(2)}/hr</span>
-                    </div>
-                    <div className="detail total">
-                      <span className="label">Total:</span>
-                      <span className="amount">${entry.totalWages.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="grand-total">
-              <span>Total Wages:</span>
-              <span className="total-amount">${grandTotal.toFixed(2)}</span>
-            </div>
-          </div>
+        {/* Show loading state for entries */}
+        {entriesLoading ? (
+          <div className="entries-loading">Loading your work entries...</div>
+        ) : (
+          <Calendar
+            entries={entries}
+            onDateClick={handleDateClick}
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+          />
         )}
 
-        {!entriesLoading && entries.length === 0 && (
-          <div className="empty-state">
-            <p>📝 No work entries yet. Add your first entry above!</p>
-          </div>
+        {/* Day modal */}
+        {selectedDate && (
+          <DayModal
+            date={selectedDate}
+            entries={entriesForSelectedDate}
+            onClose={handleCloseModal}
+            onAddEntry={addEntry}
+            onDeleteEntry={handleDeleteEntry}
+          />
         )}
       </div>
     </div>
