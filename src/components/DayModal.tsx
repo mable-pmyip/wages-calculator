@@ -2,6 +2,15 @@ import { useState } from 'react'
 import styled from 'styled-components'
 import type { WorkEntry } from '../types'
 
+// Helper function to convert 24-hour time to 12-hour AM/PM format
+const formatTime = (time24: string): string => {
+  if (!time24) return ''
+  const [hours, minutes] = time24.split(':').map(Number)
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const hours12 = hours % 12 || 12
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
 interface DayModalProps {
   date: string
   entries: WorkEntry[]
@@ -535,7 +544,7 @@ export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry, is
                   </DeleteButton>
                 </EntryItemHeader>
                 <EntryItemDetails>
-                  <span>🕐 {entry.startTime} - {entry.endTime}</span>
+                  <span>🕐 {formatTime(entry.startTime)} - {formatTime(entry.endTime)}</span>
                   <span>⏱️ {entry.hoursWorked.toFixed(2)}h</span>
                   <span>💵 ${entry.hourlyWage.toFixed(2)}/hr</span>
                   <span>${entry.totalWages.toFixed(2)}</span>

@@ -1,6 +1,15 @@
 import styled from 'styled-components'
 import type { WorkEntry } from '../types'
 
+// Helper function to convert 24-hour time to 12-hour AM/PM format
+const formatTime = (time24: string): string => {
+  if (!time24) return ''
+  const [hours, minutes] = time24.split(':').map(Number)
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const hours12 = hours % 12 || 12
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
 interface WorkTypeModalProps {
   workType: string
   entries: WorkEntry[]
@@ -144,33 +153,37 @@ const Summary = styled.div`
 const EntriesList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+`
+
+const DateGroup = styled.div`
+  background: linear-gradient(145deg, #1f1f1f 0%, #1a1a1a 100%);
+  border-radius: 12px;
+  border: 2px solid #3a3a3a;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #4ade80;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
+  }
 `
 
 const DateGroupHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
-  background: rgba(74, 222, 128, 0.08);
-  border-left: 4px solid #4ade80;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: rgba(74, 222, 128, 0.12);
-  }
+  padding: 0.85rem 1.25rem;
+  background: rgba(74, 222, 128, 0.1);
+  border-bottom: 2px solid rgba(74, 222, 128, 0.2);
 
   @media (max-width: 640px) {
-    padding: 0.6rem 0.85rem;
-    margin-bottom: 0.6rem;
+    padding: 0.75rem 1rem;
   }
 `
 
 const DateLabel = styled.div`
-  font-weight: 600;
+  font-weight: 700;
   color: #e5e5e5;
   font-size: 0.95rem;
 
@@ -180,44 +193,17 @@ const DateLabel = styled.div`
 `
 
 const EntryCard = styled.div`
-  padding: 1rem 1.25rem;
-  background: linear-gradient(145deg, #1f1f1f 0%, #1a1a1a 100%);
-  border-radius: 10px;
-  border: 2px solid #3a3a3a;
-  margin-bottom: 0.75rem;
-  transition: all 0.2s;
+  padding: 1.25rem 1.25rem;
+  background: transparent;
   position: relative;
-  overflow: hidden;
-  cursor: pointer;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
-    opacity: 0.5;
-  }
-
-  &:hover {
-    border-color: #4ade80;
-    transform: translateX(2px);
-    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
-
-    &::before {
-      opacity: 1;
-    }
-  }
+  border-bottom: 1px solid #2a2a2a;
 
   &:last-child {
-    margin-bottom: 0;
+    border-bottom: none;
   }
 
   @media (max-width: 640px) {
-    padding: 0.85rem 1rem;
-    margin-bottom: 0.6rem;
+    padding: 1rem;
   }
 `
 
@@ -315,7 +301,7 @@ export const WorkTypeModal = ({ workType, entries, total, onClose }: WorkTypeMod
               const dateTotal = dateEntries.reduce((sum, entry) => sum + entry.totalWages, 0)
               
               return (
-                <div key={date}>
+                <DateGroup key={date}>
                   <DateGroupHeader>
                     <DateLabel>{formatDate(date)}</DateLabel>
                     <EntrySubtotalBadge>${dateTotal.toFixed(2)}</EntrySubtotalBadge>
@@ -327,13 +313,13 @@ export const WorkTypeModal = ({ workType, entries, total, onClose }: WorkTypeMod
                         <EntrySubtotalBadge>${entry.totalWages.toFixed(2)}</EntrySubtotalBadge>
                       </EntryCardHeader>
                       <EntryDetails>
-                        <span>🕐 Start: {entry.startTime}</span>
+                        <span>🕐 Start: {formatTime(entry.startTime)}</span>
                         <span>⏱️ Duration: {entry.hoursWorked.toFixed(2)} hrs</span>
                         <span>💵 Rate: ${entry.hourlyWage.toFixed(2)}/hr</span>
                       </EntryDetails>
                     </EntryCard>
                   ))}
-                </div>
+                </DateGroup>
               )
             })}
           </EntriesList>

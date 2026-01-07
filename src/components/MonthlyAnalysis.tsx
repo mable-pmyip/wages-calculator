@@ -12,6 +12,8 @@ interface MonthlyAnalysisProps {
     color: string
     entries: WorkEntry[]
   }>
+  isYearly?: boolean
+  yearLabel?: string
 }
 
 const Section = styled.div`
@@ -246,12 +248,13 @@ const createPieSlice = (startAngle: number, endAngle: number, radius: number) =>
   return `M ${radius} ${radius} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
 }
 
-export const MonthlyAnalysis = ({ currentMonth, workTypeData }: MonthlyAnalysisProps) => {
+export const MonthlyAnalysis = ({ currentMonth, workTypeData, isYearly = false, yearLabel }: MonthlyAnalysisProps) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [selectedWorkType, setSelectedWorkType] = useState<string | null>(null)
 
-  const workTypeCount = workTypeData.length
-  const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })
+  const displayLabel = isYearly 
+    ? yearLabel || 'Financial Year'
+    : currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })
 
   const selectedWorkTypeData = selectedWorkType 
     ? workTypeData.find(wt => wt.workType === selectedWorkType)
@@ -262,10 +265,7 @@ export const MonthlyAnalysis = ({ currentMonth, workTypeData }: MonthlyAnalysisP
       <Section>
         <Header onClick={() => setIsExpanded(!isExpanded)}>
           <Title>
-            <h3>📊 Monthly Analysis - {monthName}</h3>
-            {workTypeCount > 0 && (
-              <span className="count">{workTypeCount} {workTypeCount === 1 ? 'type' : 'types'}</span>
-            )}
+            <h3>{isYearly ? 'Financial Year' : 'Monthly'} Analysis - {displayLabel}</h3>
           </Title>
           <ExpandIcon $isExpanded={isExpanded}>
             ▼

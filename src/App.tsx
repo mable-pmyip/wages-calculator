@@ -133,7 +133,6 @@ function App() {
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [isBulkMode, setIsBulkMode] = useState(false)
   const [selectedDays, setSelectedDays] = useState<string[]>([])
 
   // Close dropdown when clicking outside
@@ -159,16 +158,12 @@ function App() {
   }
 
   const handleDateClick = (date: string) => {
-    if (isBulkMode) {
-      // Toggle day selection in bulk mode
-      setSelectedDays(prev => 
-        prev.includes(date) 
-          ? prev.filter(d => d !== date)
-          : [...prev, date].sort()
-      )
-    } else {
-      setSelectedDate(date)
-    }
+    // Always toggle day selection
+    setSelectedDays(prev => 
+      prev.includes(date) 
+        ? prev.filter(d => d !== date)
+        : [...prev, date].sort()
+    )
   }
 
   const handleOpenBulkModal = () => {
@@ -178,17 +173,14 @@ function App() {
     }
   }
 
-  const handleBulkModeToggle = () => {
-    setIsBulkMode(!isBulkMode)
+  const handleClearSelection = () => {
     setSelectedDays([])
   }
 
   const handleCloseModal = () => {
     setSelectedDate(null)
-    if (isBulkMode) {
-      setSelectedDays([])
-      setIsBulkMode(false)
-    }
+    // Clear selection after adding entries
+    setSelectedDays([])
   }
 
   // Calculate totals for current month and financial year
@@ -263,6 +255,42 @@ function App() {
     }
   })
 
+  // Get entries for financial year, grouped by work type
+  const yearEntries = entries.filter((entry) => {
+    const entryDate = new Date(entry.date)
+    const entryYear = entryDate.getFullYear()
+    const entryMonth = entryDate.getMonth()
+    
+    return (entryYear === financialYearStart && entryMonth >= 3) ||
+           (entryYear === financialYearEnd && entryMonth < 3)
+  })
+
+  // Group year entries by work type
+  const yearEntriesByWorkType = yearEntries.reduce((acc, entry) => {
+    if (!acc[entry.workType]) {
+      acc[entry.workType] = []
+    }
+    acc[entry.workType].push(entry)
+    return acc
+  }, {} as Record<string, typeof entries>)
+
+  // Sort year work types alphabetically
+  const sortedYearWorkTypes = Object.keys(yearEntriesByWorkType).sort()
+
+  // Calculate year work type data for pie chart
+  const yearWorkTypeData = sortedYearWorkTypes.map((workType, index) => {
+    const workTypeEntries = yearEntriesByWorkType[workType]
+    const total = workTypeEntries.reduce((sum, entry) => sum + entry.totalWages, 0)
+    const percentage = yearTotal > 0 ? (total / yearTotalGross) * 100 : 0
+    return {
+      workType,
+      total,
+      percentage,
+      color: colors[index % colors.length],
+      entries: workTypeEntries
+    }
+  })
+
   // Show loading screen during initial auth check
   if (authLoading) {
     return (
@@ -317,12 +345,11 @@ function App() {
           <EntriesLoading>Loading your work entries...</EntriesLoading>
         ) : (
           <>
-            {/* Bulk Mode Controls */}
+            {/* Bulk Selection Controls */}
             <BulkModeControls
-              isBulkMode={isBulkMode}
               selectedDays={selectedDays}
-              onToggleBulkMode={handleBulkModeToggle}
               onOpenBulkModal={handleOpenBulkModal}
+              onClearSelection={handleClearSelection}
             />
 
             <Calendar
@@ -330,7 +357,7 @@ function App() {
               onDateClick={handleDateClick}
               currentMonth={currentMonth}
               onMonthChange={setCurrentMonth}
-              isBulkMode={isBulkMode}
+              isBulkMode={selectedDays.length > 0}
               selectedDays={selectedDays}
             />
 
@@ -338,6 +365,14 @@ function App() {
             <MonthlyAnalysis
               currentMonth={currentMonth}
               workTypeData={workTypeData}
+            />
+
+            {/* Financial Year Analysis */}
+            <MonthlyAnalysis
+              currentMonth={new Date(financialYearStart, 3, 1)}
+              workTypeData={yearWorkTypeData}
+              isYearly={true}
+              yearLabel={financialYearLabel}
             />
           </>
         )}
@@ -350,7 +385,7 @@ function App() {
             onClose={handleCloseModal}
             onAddEntry={addEntry}
             onDeleteEntry={handleDeleteEntry}
-            isBulkMode={isBulkMode}
+            isBulkMode={selectedDays.length > 1}
             selectedDays={selectedDays}
           />
         )}
