@@ -7,6 +7,10 @@ import { calculateNetWages } from './utils/mpf'
 import { Login } from './components/Login'
 import { Calendar } from './components/Calendar'
 import { DayModal } from './components/DayModal'
+import { Header } from './components/Header'
+import { TotalCard } from './components/TotalCard'
+import { BulkModeControls } from './components/BulkModeControls'
+import { MonthlyAnalysis } from './components/MonthlyAnalysis'
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -23,182 +27,6 @@ const Container = styled.div`
 
   @media (max-width: 640px) {
     padding: 1rem 0.5rem;
-  }
-`
-
-const AppHeader = styled.header`
-  width: 100%;
-  padding: 1.5rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.3s ease;
-
-  @media (max-width: 640px) {
-    flex-direction: row;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-  }
-`
-
-const GitHubLink = styled.a`
-  display: flex;
-  align-items: center;
-  color: #e5e5e5;
-  text-decoration: none;
-  font-size: 1.8rem;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: scale(1.1);
-    color: #4ade80;
-  }
-
-  @media (max-width: 640px) {
-    font-size: 1.5rem;
-  }
-`
-
-const UserInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-
-  @media (max-width: 640px) {
-    justify-content: flex-end;
-    gap: 8px;
-  }
-`
-
-const UserMenuContainer = styled.div`
-  position: relative;
-`
-
-const UserTrigger = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: rgba(74, 222, 128, 0.1);
-
-    img {
-      border-color: #22c55e;
-      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
-    }
-
-    span {
-      color: #4ade80;
-    }
-  }
-`
-
-const UserAvatar = styled.img`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #4ade80;
-  transition: all 0.3s ease;
-
-  @media (max-width: 640px) {
-    width: 32px;
-    height: 32px;
-  }
-`
-
-const UserName = styled.span`
-  font-weight: 500;
-  color: #e5e5e5;
-  font-size: 16px;
-  transition: all 0.3s ease;
-
-  @media (max-width: 640px) {
-    display: none;
-  }
-`
-
-const UserDropdown = styled.div`
-  position: absolute;
-  top: calc(100% + 12px);
-  right: 0;
-  background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
-  border: 1px solid rgba(74, 222, 128, 0.2);
-  border-radius: 12px;
-  min-width: 240px;
-  box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  z-index: 1000;
-  overflow: hidden;
-  animation: dropdownFadeIn 0.2s ease-out;
-  backdrop-filter: blur(10px);
-
-  @keyframes dropdownFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`
-
-const DropdownDivider = styled.div`
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(74, 222, 128, 0.3) 50%, transparent 100%);
-  margin: 4px 0;
-`
-
-const DropdownItem = styled.div`
-  padding: 14px 18px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: #e5e5e5;
-  font-size: 14px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  &:hover {
-    background: linear-gradient(90deg, rgba(74, 222, 128, 0.15) 0%, rgba(74, 222, 128, 0.05) 100%);
-    padding-left: 22px;
-  }
-
-  &:active {
-    background: rgba(74, 222, 128, 0.2);
-  }
-`
-
-const MPFToggle = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  width: 100%;
-
-  input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #4ade80;
-    border-radius: 4px;
-  }
-
-  span {
-    flex: 1;
-    user-select: none;
-    font-weight: 500;
-    letter-spacing: 0.2px;
   }
 `
 
@@ -226,88 +54,6 @@ const Subtitle = styled.p`
   @media (max-width: 640px) {
     font-size: 0.95rem;
     margin-bottom: 1.5rem;
-  }
-`
-
-const TotalCard = styled.div`
-  background: linear-gradient(145deg, #2a2a2a 0%, #252525 100%);
-  padding: 2rem;
-  border-radius: 16px;
-  border: 1px solid rgba(74, 222, 128, 0.2);
-  box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  margin-bottom: 2rem;
-  transition: all 0.3s ease;
-
-  @media (max-width: 640px) {
-    padding: 1.25rem 0.75rem;
-  }
-`
-
-const TotalsGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 2rem;
-  align-items: center;
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr auto 1fr;
-    gap: 0.75rem;
-  }
-`
-
-const TotalSection = styled.div`
-  text-align: center;
-`
-
-const TotalDivider = styled.div`
-  width: 2px;
-  height: 80px;
-  background: linear-gradient(180deg, transparent 0%, #4ade80 50%, transparent 100%);
-  opacity: 0.3;
-
-  @media (max-width: 640px) {
-    width: 1px;
-    height: 60px;
-  }
-`
-
-const TotalLabel = styled.div`
-  font-size: 0.9rem;
-  color: #a0a0a0;
-  font-weight: 500;
-  margin-bottom: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-
-  @media (max-width: 640px) {
-    font-size: 0.7rem;
-    margin-bottom: 0.5rem;
-  }
-`
-
-const TotalAmountLarge = styled.div`
-  font-size: 2.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 0.5rem;
-
-  @media (max-width: 640px) {
-    font-size: 1.5rem;
-  }
-`
-
-const TotalSubtitle = styled.div`
-  font-size: 0.85rem;
-  color: #666;
-  font-weight: 500;
-
-  @media (max-width: 640px) {
-    font-size: 0.65rem;
   }
 `
 
@@ -354,6 +100,18 @@ const LoadingSpinner = styled.div`
   }
 `
 
+// Generate colors for pie chart
+const colors = [
+  '#4ade80', // green
+  '#60a5fa', // blue
+  '#f59e0b', // amber
+  '#ec4899', // pink
+  '#8b5cf6', // purple
+  '#14b8a6', // teal
+  '#f97316', // orange
+  '#06b6d4', // cyan
+]
+
 function App() {
   // Authentication
   const { user, loading: authLoading, signOut } = useAuth()
@@ -375,6 +133,8 @@ function App() {
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [isBulkMode, setIsBulkMode] = useState(false)
+  const [selectedDays, setSelectedDays] = useState<string[]>([])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -399,14 +159,39 @@ function App() {
   }
 
   const handleDateClick = (date: string) => {
-    setSelectedDate(date)
+    if (isBulkMode) {
+      // Toggle day selection in bulk mode
+      setSelectedDays(prev => 
+        prev.includes(date) 
+          ? prev.filter(d => d !== date)
+          : [...prev, date].sort()
+      )
+    } else {
+      setSelectedDate(date)
+    }
+  }
+
+  const handleOpenBulkModal = () => {
+    if (selectedDays.length > 0) {
+      // Use the first selected day as the date for the modal
+      setSelectedDate(selectedDays[0])
+    }
+  }
+
+  const handleBulkModeToggle = () => {
+    setIsBulkMode(!isBulkMode)
+    setSelectedDays([])
   }
 
   const handleCloseModal = () => {
     setSelectedDate(null)
+    if (isBulkMode) {
+      setSelectedDays([])
+      setIsBulkMode(false)
+    }
   }
 
-  // Calculate totals for current month and year
+  // Calculate totals for current month and financial year
   const currentYear = currentMonth.getFullYear()
   const currentMonthNum = currentMonth.getMonth()
 
@@ -417,10 +202,24 @@ function App() {
     })
     .reduce((sum, entry) => sum + entry.totalWages, 0)
 
+  // Financial year runs from April 1 to March 31
+  // If current month is Jan-Mar (0-2), FY is (currentYear-1)/(currentYear)
+  // If current month is Apr-Dec (3-11), FY is (currentYear)/(currentYear+1)
+  const financialYearStart = currentMonthNum < 3 ? currentYear - 1 : currentYear
+  const financialYearEnd = financialYearStart + 1
+  const financialYearLabel = `FY ${financialYearStart}/${String(financialYearEnd).slice(-2)}`
+
   const yearTotalGross = entries
     .filter((entry) => {
       const entryDate = new Date(entry.date)
-      return entryDate.getFullYear() === currentYear
+      const entryYear = entryDate.getFullYear()
+      const entryMonth = entryDate.getMonth()
+      
+      // Entry is in financial year if:
+      // - It's in financialYearStart and month >= 3 (April onwards), OR
+      // - It's in financialYearEnd and month < 3 (January to March)
+      return (entryYear === financialYearStart && entryMonth >= 3) ||
+             (entryYear === financialYearEnd && entryMonth < 3)
     })
     .reduce((sum, entry) => sum + entry.totalWages, 0)
 
@@ -431,6 +230,38 @@ function App() {
   const entriesForSelectedDate = selectedDate
     ? entries.filter((entry) => entry.date === selectedDate)
     : []
+
+  // Get entries for current month, grouped by work type
+  const monthEntries = entries.filter((entry) => {
+    const entryDate = new Date(entry.date)
+    return entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonthNum
+  })
+
+  // Group entries by work type
+  const entriesByWorkType = monthEntries.reduce((acc, entry) => {
+    if (!acc[entry.workType]) {
+      acc[entry.workType] = []
+    }
+    acc[entry.workType].push(entry)
+    return acc
+  }, {} as Record<string, typeof entries>)
+
+  // Sort work types alphabetically
+  const sortedWorkTypes = Object.keys(entriesByWorkType).sort()
+
+  // Calculate work type data for pie chart
+  const workTypeData = sortedWorkTypes.map((workType, index) => {
+    const workTypeEntries = entriesByWorkType[workType]
+    const total = workTypeEntries.reduce((sum, entry) => sum + entry.totalWages, 0)
+    const percentage = monthTotal > 0 ? (total / monthTotalGross) * 100 : 0
+    return {
+      workType,
+      total,
+      percentage,
+      color: colors[index % colors.length],
+      entries: workTypeEntries
+    }
+  })
 
   // Show loading screen during initial auth check
   if (authLoading) {
@@ -452,77 +283,27 @@ function App() {
     <AppContainer>
       <Container>
         {/* Header with GitHub and user info */}
-        <AppHeader>
-          <GitHubLink
-            href="https://github.com/mable-pmyip/wages-calculator"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="View source on GitHub"
-          >
-            <svg width="32" height="32" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-            </svg>
-          </GitHubLink>
-          
-          <UserInfo>
-            <UserMenuContainer ref={dropdownRef}>
-              <UserTrigger onClick={() => setShowDropdown(!showDropdown)}>
-                {user.photoURL && (
-                  <UserAvatar
-                    src={user.photoURL}
-                    alt={user.displayName || 'User'}
-                  />
-                )}
-                <UserName>{user.displayName || user.email}</UserName>
-              </UserTrigger>
-              {showDropdown && (
-                <UserDropdown>
-                  <DropdownDivider />
-                  <DropdownItem onClick={(e) => e.stopPropagation()}>
-                    <MPFToggle>
-                      <input
-                        type="checkbox"
-                        checked={settings.deductMPF}
-                        onChange={(e) => updateSettings({ deductMPF: e.target.checked })}
-                      />
-                      <span>Deduct MPF</span>
-                    </MPFToggle>
-                  </DropdownItem>
-                  <DropdownDivider />
-                  <DropdownItem onClick={signOut}>
-                    <span>Logout</span>
-                  </DropdownItem>
-                </UserDropdown>
-              )}
-            </UserMenuContainer>
-          </UserInfo>
-        </AppHeader>
+        <Header
+          user={user}
+          signOut={signOut}
+          settings={settings}
+          updateSettings={updateSettings}
+          showDropdown={showDropdown}
+          setShowDropdown={setShowDropdown}
+          dropdownRef={dropdownRef}
+        />
 
         <Title>💰 Wages Calculator</Title>
         <Subtitle>Track your work hours and calculate total earnings</Subtitle>
 
         {/* Total earnings card at the top */}
-        <TotalCard>
-          <TotalsGrid>
-            <TotalSection>
-              <TotalLabel>
-                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-              </TotalLabel>
-              <TotalAmountLarge>${monthTotal.toFixed(2)}</TotalAmountLarge>
-              <TotalSubtitle>Monthly Total{settings.deductMPF && ' (MPF Deducted)'}</TotalSubtitle>
-            </TotalSection>
-            
-            <TotalDivider />
-            
-            <TotalSection>
-              <TotalLabel>{currentYear}</TotalLabel>
-              <TotalAmountLarge>${yearTotal.toFixed(2)}</TotalAmountLarge>
-              <TotalSubtitle>
-                Year Total{settings.deductMPF && ' (MPF Deducted)'}
-              </TotalSubtitle>
-            </TotalSection>
-          </TotalsGrid>
-        </TotalCard>
+        <TotalCard
+          currentMonth={currentMonth}
+          monthTotal={monthTotal}
+          financialYearLabel={financialYearLabel}
+          yearTotal={yearTotal}
+          deductMPF={settings.deductMPF}
+        />
 
         {/* Show error if any */}
         {entriesError && (
@@ -535,12 +316,30 @@ function App() {
         {entriesLoading ? (
           <EntriesLoading>Loading your work entries...</EntriesLoading>
         ) : (
-          <Calendar
-            entries={entries}
-            onDateClick={handleDateClick}
-            currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
-          />
+          <>
+            {/* Bulk Mode Controls */}
+            <BulkModeControls
+              isBulkMode={isBulkMode}
+              selectedDays={selectedDays}
+              onToggleBulkMode={handleBulkModeToggle}
+              onOpenBulkModal={handleOpenBulkModal}
+            />
+
+            <Calendar
+              entries={entries}
+              onDateClick={handleDateClick}
+              currentMonth={currentMonth}
+              onMonthChange={setCurrentMonth}
+              isBulkMode={isBulkMode}
+              selectedDays={selectedDays}
+            />
+
+            {/* Monthly Analysis */}
+            <MonthlyAnalysis
+              currentMonth={currentMonth}
+              workTypeData={workTypeData}
+            />
+          </>
         )}
 
         {/* Day modal */}
@@ -551,6 +350,8 @@ function App() {
             onClose={handleCloseModal}
             onAddEntry={addEntry}
             onDeleteEntry={handleDeleteEntry}
+            isBulkMode={isBulkMode}
+            selectedDays={selectedDays}
           />
         )}
       </Container>

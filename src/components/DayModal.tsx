@@ -8,6 +8,8 @@ interface DayModalProps {
   onClose: () => void
   onAddEntry: (entry: Omit<WorkEntry, 'id'>) => Promise<void>
   onDeleteEntry: (id: string) => Promise<void>
+  isBulkMode?: boolean
+  selectedDays?: string[]
 }
 
 const ModalOverlay = styled.div`
@@ -217,6 +219,12 @@ const EntryItemDetails = styled.div`
   font-size: 0.9rem;
   color: #a0a0a0;
 
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
   span:last-child {
     font-weight: 700;
     color: #4ade80;
@@ -236,6 +244,43 @@ const EmptyDay = styled.div`
 
   @media (max-width: 640px) {
     padding: 2rem;
+  }
+`
+
+const BulkModeNotice = styled.div`
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(74, 222, 128, 0.08) 100%);
+  border: 2px solid rgba(74, 222, 128, 0.3);
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  color: #e5e5e5;
+  text-align: center;
+
+  .highlight {
+    color: #4ade80;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .dates {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+
+  @media (max-width: 640px) {
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+
+    .highlight {
+      font-size: 1rem;
+    }
+
+    .dates {
+      font-size: 0.8rem;
+    }
   }
 `
 
@@ -366,7 +411,7 @@ const SubmitButton = styled.button`
   }
 `
 
-export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry }: DayModalProps) => {
+export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry, isBulkMode = false, selectedDays = [] }: DayModalProps) => {
   const [isAdding, setIsAdding] = useState(false)
   const [workType, setWorkType] = useState('')
   const [startTime, setStartTime] = useState('')
@@ -408,23 +453,33 @@ export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry }: 
 
     const totalWages = hours * wage
 
-    const newEntry = {
-      workType,
-      date,
-      startTime,
-      endTime,
-      hourlyWage: wage,
-      totalWages,
-      hoursWorked: hours
-    }
-
     try {
-      await onAddEntry(newEntry)
+      // If in bulk mode with multiple days selected, create entries for all days
+      const daysToAdd = isBulkMode && selectedDays.length > 0 ? selectedDays : [date]
+      
+      for (const dayDate of daysToAdd) {
+        const newEntry = {
+          workType,
+          date: dayDate,
+          startTime,
+          endTime,
+          hourlyWage: wage,
+          totalWages,
+          hoursWorked: hours
+        }
+        await onAddEntry(newEntry)
+      }
+      
       setWorkType('')
       setStartTime('')
       setEndTime('')
       setHourlyWage('')
       setIsAdding(false)
+      
+      // Close modal after successful bulk add
+      if (isBulkMode && selectedDays.length > 0) {
+        onClose()
+      }
     } catch (error) {
       alert('Failed to add entry. Please try again.')
     }
@@ -449,6 +504,17 @@ export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry }: 
         </ModalHeader>
 
         <ModalBody>
+          {isBulkMode && selectedDays.length > 0 && (
+            <BulkModeNotice>
+              <div>
+                Adding entry to <span className="highlight">{selectedDays.length} {selectedDays.length === 1 ? 'day' : 'days'}</span>
+              </div>
+              <div className="dates">
+                {selectedDays.map(d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })).join(', ')}
+              </div>
+            </BulkModeNotice>
+          )}
+
           {entries.length > 0 && (
             <DaySummary>
               <span>Total for this day:</span>
@@ -469,9 +535,9 @@ export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry }: 
                   </DeleteButton>
                 </EntryItemHeader>
                 <EntryItemDetails>
-                  <span>{entry.startTime} - {entry.endTime}</span>
-                  <span>{entry.hoursWorked.toFixed(2)}h</span>
-                  <span>${entry.hourlyWage.toFixed(2)}/hr</span>
+                  <span>🕐 {entry.startTime} - {entry.endTime}</span>
+                  <span>⏱️ {entry.hoursWorked.toFixed(2)}h</span>
+                  <span>💵 ${entry.hourlyWage.toFixed(2)}/hr</span>
                   <span>${entry.totalWages.toFixed(2)}</span>
                 </EntryItemDetails>
               </EntryItem>

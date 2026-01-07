@@ -6,6 +6,8 @@ interface CalendarProps {
   onDateClick: (date: string) => void
   currentMonth: Date
   onMonthChange: (date: Date) => void
+  isBulkMode?: boolean
+  selectedDays?: string[]
 }
 
 const CalendarContainer = styled.div`
@@ -144,13 +146,15 @@ const CalendarGrid = styled.div`
   }
 `
 
-const CalendarDay = styled.div<{ $hasEntries?: boolean; $isToday?: boolean; $isEmpty?: boolean }>`
+const CalendarDay = styled.div<{ $hasEntries?: boolean; $isToday?: boolean; $isEmpty?: boolean; $isSelected?: boolean }>`
   aspect-ratio: 1;
   background: ${props => 
     props.$isEmpty ? 'transparent' :
+    props.$isSelected ? 'linear-gradient(135deg, rgba(74, 222, 128, 0.3) 0%, rgba(74, 222, 128, 0.2) 100%)' :
     props.$hasEntries ? 'rgba(74, 222, 128, 0.15)' : '#2a2a2a'};
   border: ${props => 
     props.$isEmpty ? 'none' :
+    props.$isSelected ? '3px dashed #4ade80' :
     props.$hasEntries ? '2px solid #4ade80' : '2px solid #3a3a3a'};
   border-radius: 8px;
   padding: 0.5rem;
@@ -163,6 +167,29 @@ const CalendarDay = styled.div<{ $hasEntries?: boolean; $isToday?: boolean; $isE
   min-height: 80px;
   max-height: 100px;
   overflow: hidden;
+  position: relative;
+
+  ${props => props.$isSelected && `
+    box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.3), inset 0 0 20px rgba(74, 222, 128, 0.2);
+    
+    &::after {
+      content: '✓';
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+      color: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 900;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+  `}
 
   &:not(:first-child):hover {
     ${props => !props.$isEmpty && `
@@ -178,6 +205,16 @@ const CalendarDay = styled.div<{ $hasEntries?: boolean; $isToday?: boolean; $isE
     max-height: 48px;
     padding: 0.25rem 0.15rem;
     border-radius: 6px;
+    
+    ${props => props.$isSelected && `
+      &::after {
+        width: 16px;
+        height: 16px;
+        top: 2px;
+        right: 2px;
+        font-size: 0.65rem;
+      }
+    `}
   }
 `
 
@@ -241,7 +278,7 @@ const EntryAmount = styled.span`
   }
 `
 
-export const Calendar = ({ entries, onDateClick, currentMonth, onMonthChange }: CalendarProps) => {
+export const Calendar = ({ entries, onDateClick, currentMonth, onMonthChange, isBulkMode = false, selectedDays = [] }: CalendarProps) => {
   const year = currentMonth.getFullYear()
   const month = currentMonth.getMonth()
 
@@ -293,12 +330,14 @@ export const Calendar = ({ entries, onDateClick, currentMonth, onMonthChange }: 
       const hasEntries = entriesByDate[dateStr]
       const totalForDay = totalsByDate[dateStr] || 0
       const isToday = dateStr === today
+      const isSelected = isBulkMode && selectedDays.includes(dateStr)
 
       days.push(
         <CalendarDay
           key={day}
           $hasEntries={!!hasEntries}
           $isToday={isToday}
+          $isSelected={isSelected}
           onClick={() => onDateClick(dateStr)}
         >
           <DayNumber $isToday={isToday}>{day}</DayNumber>
