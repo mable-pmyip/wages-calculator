@@ -16,6 +16,7 @@ interface DayModalProps {
   entries: WorkEntry[]
   onClose: () => void
   onAddEntry: (entry: Omit<WorkEntry, 'id'>) => Promise<void>
+  onUpdateEntry: (id: string, entry: Omit<WorkEntry, 'id'>) => Promise<void>
   onDeleteEntry: (id: string) => Promise<void>
   isBulkMode?: boolean
   selectedDays?: string[]
@@ -194,6 +195,34 @@ const EntryItemHeader = styled.div`
     font-size: 1.1rem;
     font-weight: 600;
     color: #e5e5e5;
+  }
+`
+
+const ActionButtons = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+`
+
+const EditButton = styled.button`
+  background: #3b82f6;
+  border: none;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  height: 28px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+
+  &:hover {
+    background: #2563eb;
+    transform: scale(1.05);
   }
 `
 
@@ -420,8 +449,9 @@ const SubmitButton = styled.button`
   }
 `
 
-export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry, isBulkMode = false, selectedDays = [] }: DayModalProps) => {
+export const DayModal = ({ date, entries, onClose, onAddEntry, onUpdateEntry, onDeleteEntry, isBulkMode = false, selectedDays = [] }: DayModalProps) => {
   const [isAdding, setIsAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [workType, setWorkType] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
@@ -438,6 +468,23 @@ export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry, is
 
     const diff = endDate.getTime() - startDate.getTime()
     return diff / (1000 * 60 * 60)
+  }
+
+  const handleEdit = (entry: WorkEntry) => {
+    setEditingId(entry.id)
+    setWorkType(entry.workType)
+    setStartTime(entry.startTime)
+    setEndTime(entry.endTime)
+    setHourlyWage(entry.hourlyWage.toString())
+    setIsAdding(false)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setWorkType('')
+    setStartTime('')
+    setEndTime('')
+    setHourlyWage('')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -463,34 +510,50 @@ export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry, is
     const totalWages = hours * wage
 
     try {
-      // If in bulk mode with multiple days selected, create entries for all days
-      const daysToAdd = isBulkMode && selectedDays.length > 0 ? selectedDays : [date]
-      
-      for (const dayDate of daysToAdd) {
-        const newEntry = {
+      if (editingId) {
+        // Update existing entry
+        const updatedEntry = {
           workType,
-          date: dayDate,
+          date,
           startTime,
           endTime,
           hourlyWage: wage,
           totalWages,
           hoursWorked: hours
         }
-        await onAddEntry(newEntry)
+        await onUpdateEntry(editingId, updatedEntry)
+        setEditingId(null)
+      } else {
+        // If in bulk mode with multiple days selected, create entries for all days
+        const daysToAdd = isBulkMode && selectedDays.length > 0 ? selectedDays : [date]
+        
+        for (const dayDate of daysToAdd) {
+          const newEntry = {
+            workType,
+            date: dayDate,
+            startTime,
+            endTime,
+            hourlyWage: wage,
+            totalWages,
+            hoursWorked: hours
+          }
+          await onAddEntry(newEntry)
+        }
+        
+        setIsAdding(false)
+        
+        // Close modal after successful bulk add
+        if (isBulkMode && selectedDays.length > 0) {
+          onClose()
+        }
       }
       
       setWorkType('')
       setStartTime('')
       setEndTime('')
       setHourlyWage('')
-      setIsAdding(false)
-      
-      // Close modal after successful bulk add
-      if (isBulkMode && selectedDays.length > 0) {
-        onClose()
-      }
     } catch (error) {
-      alert('Failed to add entry. Please try again.')
+      alert(`Failed to ${editingId ? 'update' : 'add'} entry. Please try again.`)
     }
   }
 
@@ -536,12 +599,20 @@ export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry, is
               <EntryItem key={entry.id}>
                 <EntryItemHeader>
                   <h3>{entry.workType}</h3>
-                  <DeleteButton
-                    onClick={() => onDeleteEntry(entry.id)}
-                    aria-label="Delete entry"
-                  >
-                    ×
-                  </DeleteButton>
+                  <ActionButtons>
+                    <EditButton
+                      onClick={() => handleEdit(entry)}
+                      aria-label="Edit entry"
+                    >
+                      ✎
+                    </EditButton>
+                    <DeleteButton
+                      onClick={() => onDeleteEntry(entry.id)}
+                      aria-label="Delete entry"
+                    >
+                      ×
+                    </DeleteButton>
+                  </ActionButtons>
                 </EntryItemHeader>
                 <EntryItemDetails>
                   <span>🕐 {formatTime(entry.startTime)} - {formatTime(entry.endTime)}</span>
@@ -559,11 +630,11 @@ export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry, is
             )}
           </EntriesList>
 
-          {!isAdding ? (
+          {!isAdding && !editingId ? (
             <AddEntryButton onClick={() => setIsAdding(true)}>
               + Add Work Entry
             </AddEntryButton>
-          ) : (
+          ) : (isAdding || editingId) && (
             <Form onSubmit={handleSubmit}>
               <FormGroup>
                 <label htmlFor="modal-workType">Type of Work</label>
@@ -616,11 +687,11 @@ export const DayModal = ({ date, entries, onClose, onAddEntry, onDeleteEntry, is
               </FormGroup>
 
               <FormActions>
-                <CancelButton type="button" onClick={() => setIsAdding(false)}>
+                <CancelButton type="button" onClick={() => editingId ? handleCancelEdit() : setIsAdding(false)}>
                   Cancel
                 </CancelButton>
                 <SubmitButton type="submit">
-                  Add Entry
+                  {editingId ? 'Update Entry' : 'Add Entry'}
                 </SubmitButton>
               </FormActions>
             </Form>

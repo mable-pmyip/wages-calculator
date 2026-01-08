@@ -6,6 +6,7 @@ import {
   orderBy,
   onSnapshot,
   addDoc,
+  updateDoc,
   deleteDoc,
   doc,
   Timestamp
@@ -73,6 +74,21 @@ export const useWorkEntries = (userId: string | null) => {
     }
   }
 
+  const updateEntry = async (entryId: string, entry: Omit<WorkEntry, 'id'>) => {
+    if (!userId) throw new Error('User not authenticated')
+
+    try {
+      await updateDoc(doc(db, 'workEntries', entryId), {
+        ...entry,
+        userId
+      })
+    } catch (err) {
+      console.error('Error updating entry:', err)
+      setError(err as Error)
+      throw err
+    }
+  }
+
   const deleteEntry = async (entryId: string) => {
     if (!userId) throw new Error('User not authenticated')
 
@@ -85,5 +101,5 @@ export const useWorkEntries = (userId: string | null) => {
     }
   }
 
-  return { entries, loading, error, addEntry, deleteEntry }
+  return { entries, loading, error, addEntry, updateEntry, deleteEntry }
 }

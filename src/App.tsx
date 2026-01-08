@@ -122,6 +122,7 @@ function App() {
     loading: entriesLoading,
     error: entriesError,
     addEntry,
+    updateEntry,
     deleteEntry
   } = useWorkEntries(user?.uid || null)
 
@@ -154,6 +155,14 @@ function App() {
       await deleteEntry(id)
     } catch (error) {
       alert('Failed to delete entry. Please try again.')
+    }
+  }
+
+  const handleUpdateEntry = async (id: string, entry: Omit<WorkEntry, 'id'>) => {
+    try {
+      await updateEntry(id, entry)
+    } catch (error) {
+      alert('Failed to update entry. Please try again.')
     }
   }
 
@@ -386,6 +395,7 @@ function App() {
             entries={entriesForSelectedDate}
             onClose={handleCloseModal}
             onAddEntry={addEntry}
+            onUpdateEntry={handleUpdateEntry}
             onDeleteEntry={handleDeleteEntry}
             isBulkMode={selectedDays.length > 1}
             selectedDays={selectedDays}

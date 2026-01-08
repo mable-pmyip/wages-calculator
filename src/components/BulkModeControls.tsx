@@ -106,7 +106,8 @@ export const BulkModeControls = ({ selectedDays, onOpenBulkModal, onClearSelecti
     <Container>
       <ButtonGroup>
         <AddButton onClick={onOpenBulkModal}>
-          Add Entry to {selectedDays.length} {selectedDays.length === 1 ? 'Day' : 'Days'}
+          {selectedDays.length === 1 ? 'Add/Edit Entry' :
+          `Add Entry to ${selectedDays.length} Days`}
         </AddButton>
         <ClearButton onClick={onClearSelection}>
           Clear
