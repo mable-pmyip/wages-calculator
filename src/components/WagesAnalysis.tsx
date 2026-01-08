@@ -248,7 +248,7 @@ const createPieSlice = (startAngle: number, endAngle: number, radius: number) =>
   return `M ${radius} ${radius} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
 }
 
-export const MonthlyAnalysis = ({ currentMonth, workTypeData, isYearly = false, yearLabel }: MonthlyAnalysisProps) => {
+export const WagesAnalysis = ({ currentMonth, workTypeData, isYearly = false, yearLabel }: MonthlyAnalysisProps) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [selectedWorkType, setSelectedWorkType] = useState<string | null>(null)
 

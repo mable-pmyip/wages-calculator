@@ -3,14 +3,14 @@ import styled from 'styled-components'
 import { useAuth } from './hooks/useAuth'
 import { useWorkEntries } from './hooks/useWorkEntries'
 import { useUserSettings } from './hooks/useUserSettings'
-import { calculateNetWages } from './utils/mpf'
+import { calculateNetWages, calculateNetWagesByWorkType, type WorkEntry } from './utils/mpf'
 import { Login } from './components/Login'
 import { Calendar } from './components/Calendar'
 import { DayModal } from './components/DayModal'
 import { Header } from './components/Header'
 import { TotalCard } from './components/TotalCard'
 import { BulkModeControls } from './components/BulkModeControls'
-import { MonthlyAnalysis } from './components/MonthlyAnalysis'
+import { WagesAnalysis } from './components/WagesAnalysis'
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -187,12 +187,13 @@ function App() {
   const currentYear = currentMonth.getFullYear()
   const currentMonthNum = currentMonth.getMonth()
 
-  const monthTotalGross = entries
-    .filter((entry) => {
-      const entryDate = new Date(entry.date)
-      return entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonthNum
-    })
-    .reduce((sum, entry) => sum + entry.totalWages, 0)
+  // Get entries for current month
+  const monthEntries = entries.filter((entry) => {
+    const entryDate = new Date(entry.date)
+    return entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonthNum
+  })
+
+  const monthTotalGross = monthEntries.reduce((sum, entry) => sum + entry.totalWages, 0)
 
   // Financial year runs from April 1 to March 31
   // If current month is Jan-Mar (0-2), FY is (currentYear-1)/(currentYear)
@@ -201,33 +202,44 @@ function App() {
   const financialYearEnd = financialYearStart + 1
   const financialYearLabel = `FY ${financialYearStart}/${String(financialYearEnd).slice(-2)}`
 
-  const yearTotalGross = entries
-    .filter((entry) => {
-      const entryDate = new Date(entry.date)
-      const entryYear = entryDate.getFullYear()
-      const entryMonth = entryDate.getMonth()
-      
-      // Entry is in financial year if:
-      // - It's in financialYearStart and month >= 3 (April onwards), OR
-      // - It's in financialYearEnd and month < 3 (January to March)
-      return (entryYear === financialYearStart && entryMonth >= 3) ||
-             (entryYear === financialYearEnd && entryMonth < 3)
-    })
-    .reduce((sum, entry) => sum + entry.totalWages, 0)
+  // Get entries for financial year
+  const yearEntries = entries.filter((entry) => {
+    const entryDate = new Date(entry.date)
+    const entryYear = entryDate.getFullYear()
+    const entryMonth = entryDate.getMonth()
+    
+    // Entry is in financial year if:
+    // - It's in financialYearStart and month >= 3 (April onwards), OR
+    // - It's in financialYearEnd and month < 3 (January to March)
+    return (entryYear === financialYearStart && entryMonth >= 3) ||
+           (entryYear === financialYearEnd && entryMonth < 3)
+  })
 
-  // Apply MPF deduction if enabled
-  const monthTotal = calculateNetWages(monthTotalGross, settings.deductMPF)
-  const yearTotal = calculateNetWages(yearTotalGross, settings.deductMPF)
+  const yearTotalGross = yearEntries.reduce((sum, entry) => sum + entry.totalWages, 0)
+
+  // Transform entries to WorkEntry format for MPF calculation
+  // Group by work type for accurate MPF calculation
+  const monthWorkEntries: WorkEntry[] = Object.entries(
+    monthEntries.reduce((acc, entry) => {
+      acc[entry.workType] = (acc[entry.workType] || 0) + entry.totalWages
+      return acc
+    }, {} as Record<string, number>)
+  ).map(([type, income]) => ({ type, income }))
+
+  const yearWorkEntries: WorkEntry[] = Object.entries(
+    yearEntries.reduce((acc, entry) => {
+      acc[entry.workType] = (acc[entry.workType] || 0) + entry.totalWages
+      return acc
+    }, {} as Record<string, number>)
+  ).map(([type, income]) => ({ type, income }))
+
+  // Apply MPF deduction if enabled, using work-type-based calculation
+  const monthTotal = calculateNetWagesByWorkType(monthWorkEntries, settings.deductMPF)
+  const yearTotal = calculateNetWagesByWorkType(yearWorkEntries, settings.deductMPF)
 
   const entriesForSelectedDate = selectedDate
     ? entries.filter((entry) => entry.date === selectedDate)
     : []
-
-  // Get entries for current month, grouped by work type
-  const monthEntries = entries.filter((entry) => {
-    const entryDate = new Date(entry.date)
-    return entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonthNum
-  })
 
   // Group entries by work type
   const entriesByWorkType = monthEntries.reduce((acc, entry) => {
@@ -255,17 +267,7 @@ function App() {
     }
   })
 
-  // Get entries for financial year, grouped by work type
-  const yearEntries = entries.filter((entry) => {
-    const entryDate = new Date(entry.date)
-    const entryYear = entryDate.getFullYear()
-    const entryMonth = entryDate.getMonth()
-    
-    return (entryYear === financialYearStart && entryMonth >= 3) ||
-           (entryYear === financialYearEnd && entryMonth < 3)
-  })
-
-  // Group year entries by work type
+  // Group year entries by work type (using yearEntries already filtered above)
   const yearEntriesByWorkType = yearEntries.reduce((acc, entry) => {
     if (!acc[entry.workType]) {
       acc[entry.workType] = []
@@ -362,13 +364,13 @@ function App() {
             />
 
             {/* Monthly Analysis */}
-            <MonthlyAnalysis
+            <WagesAnalysis
               currentMonth={currentMonth}
               workTypeData={workTypeData}
             />
 
             {/* Financial Year Analysis */}
-            <MonthlyAnalysis
+            <WagesAnalysis
               currentMonth={new Date(financialYearStart, 3, 1)}
               workTypeData={yearWorkTypeData}
               isYearly={true}
