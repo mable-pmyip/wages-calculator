@@ -3,7 +3,8 @@ import styled from 'styled-components'
 import { useAuth } from './hooks/useAuth'
 import { useWorkEntries } from './hooks/useWorkEntries'
 import { useUserSettings } from './hooks/useUserSettings'
-import { calculateNetWages, calculateNetWagesByWorkType, type WorkEntry } from './utils/mpf'
+import { calculateNetWagesByWorkType, type WorkEntry as MPFWorkEntry } from './utils/mpf'
+import type { WorkEntry } from './types'
 import { Login } from './components/Login'
 import { Calendar } from './components/Calendar'
 import { DayModal } from './components/DayModal'
@@ -226,16 +227,16 @@ function App() {
 
   const yearTotalGross = yearEntries.reduce((sum, entry) => sum + entry.totalWages, 0)
 
-  // Transform entries to WorkEntry format for MPF calculation
+  // Transform entries to MPFWorkEntry format for MPF calculation
   // Group by work type for accurate MPF calculation
-  const monthWorkEntries: WorkEntry[] = Object.entries(
+  const monthWorkEntries: MPFWorkEntry[] = Object.entries(
     monthEntries.reduce((acc, entry) => {
       acc[entry.workType] = (acc[entry.workType] || 0) + entry.totalWages
       return acc
     }, {} as Record<string, number>)
   ).map(([type, income]) => ({ type, income }))
 
-  const yearWorkEntries: WorkEntry[] = Object.entries(
+  const yearWorkEntries: MPFWorkEntry[] = Object.entries(
     yearEntries.reduce((acc, entry) => {
       acc[entry.workType] = (acc[entry.workType] || 0) + entry.totalWages
       return acc
