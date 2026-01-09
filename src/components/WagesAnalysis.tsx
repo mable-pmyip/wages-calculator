@@ -2,6 +2,7 @@ import { useState } from 'react'
 import styled from 'styled-components'
 import type { WorkEntry } from '../types'
 import { WorkTypeModal } from './WorkTypeModal'
+import { calculateMPFDeduction, type WorkEntry as MPFWorkEntry } from '../utils/mpf'
 
 interface MonthlyAnalysisProps {
   currentMonth: Date
@@ -14,6 +15,7 @@ interface MonthlyAnalysisProps {
   }>
   isYearly?: boolean
   yearLabel?: string
+  deductMPF: boolean
 }
 
 const Section = styled.div`
@@ -248,7 +250,7 @@ const createPieSlice = (startAngle: number, endAngle: number, radius: number) =>
   return `M ${radius} ${radius} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
 }
 
-export const WagesAnalysis = ({ currentMonth, workTypeData, isYearly = false, yearLabel }: MonthlyAnalysisProps) => {
+export const WagesAnalysis = ({ currentMonth, workTypeData, isYearly = false, yearLabel, deductMPF }: MonthlyAnalysisProps) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [selectedWorkType, setSelectedWorkType] = useState<string | null>(null)
 
@@ -256,8 +258,38 @@ export const WagesAnalysis = ({ currentMonth, workTypeData, isYearly = false, ye
     ? yearLabel || 'Financial Year'
     : currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })
 
+  // Calculate net amounts (after MPF) if deductMPF is enabled
+  const workTypeDataWithMPF = workTypeData.map(wt => {
+    if (!deductMPF) {
+      return wt
+    }
+    
+    // Transform entries to MPFWorkEntry format for MPF calculation
+    const mpfWorkEntries: MPFWorkEntry[] = [{
+      type: wt.workType,
+      income: wt.total
+    }]
+    
+    const mpfDeduction = calculateMPFDeduction(mpfWorkEntries)
+    const netTotal = wt.total - mpfDeduction
+    
+    return {
+      ...wt,
+      total: netTotal,
+      grossTotal: wt.total,
+      mpfDeduction
+    }
+  })
+
+  // Recalculate percentages based on net totals
+  const totalAmount = workTypeDataWithMPF.reduce((sum, wt) => sum + wt.total, 0)
+  const workTypeDataFinal = workTypeDataWithMPF.map(wt => ({
+    ...wt,
+    percentage: totalAmount > 0 ? (wt.total / totalAmount) * 100 : 0
+  }))
+
   const selectedWorkTypeData = selectedWorkType 
-    ? workTypeData.find(wt => wt.workType === selectedWorkType)
+    ? workTypeDataFinal.find(wt => wt.workType === selectedWorkType)
     : null
 
   return (
@@ -265,7 +297,7 @@ export const WagesAnalysis = ({ currentMonth, workTypeData, isYearly = false, ye
       <Section>
         <Header onClick={() => setIsExpanded(!isExpanded)}>
           <Title>
-            <h3>{isYearly ? 'Financial Year' : 'Monthly'} Analysis - {displayLabel}</h3>
+            <h3>{isYearly ? 'Financial Year' : 'Monthly'} Analysis - {displayLabel}{deductMPF && ' (MPF Deducted)'}</h3>
           </Title>
           <ExpandIcon $isExpanded={isExpanded}>
             ▼
@@ -281,8 +313,8 @@ export const WagesAnalysis = ({ currentMonth, workTypeData, isYearly = false, ye
               <PieChartContainer>
                 <PieChartWrapper>
                   <PieChartSvg width="200" height="200" viewBox="0 0 200 200">
-                    {workTypeData.map((data, index) => {
-                      const startAngle = workTypeData
+                    {workTypeDataFinal.map((data, index) => {
+                      const startAngle = workTypeDataFinal
                         .slice(0, index)
                         .reduce((sum, d) => sum + (d.percentage / 100) * 2 * Math.PI, -Math.PI / 2)
                       const endAngle = startAngle + (data.percentage / 100) * 2 * Math.PI
@@ -301,7 +333,7 @@ export const WagesAnalysis = ({ currentMonth, workTypeData, isYearly = false, ye
                     })}
                   </PieChartSvg>
                   <Legend>
-                    {workTypeData.map(data => (
+                    {workTypeDataFinal.map(data => (
                       <LegendItem 
                         key={data.workType}
                         onClick={() => setSelectedWorkType(data.workType)}

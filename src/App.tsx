@@ -377,6 +377,7 @@ function App() {
             <WagesAnalysis
               currentMonth={currentMonth}
               workTypeData={workTypeData}
+              deductMPF={settings.deductMPF}
             />
 
             {/* Financial Year Analysis */}
@@ -385,6 +386,7 @@ function App() {
               workTypeData={yearWorkTypeData}
               isYearly={true}
               yearLabel={financialYearLabel}
+              deductMPF={settings.deductMPF}
             />
           </>
         )}
