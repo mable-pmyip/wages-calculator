@@ -3,12 +3,12 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: 'AIzaSyAO4XDD1YBeUXF2v3knhJGhHU1mc_T4MdU',
+  authDomain: 'wages-calculator-ed37a.firebaseapp.com',
+  projectId: 'wages-calculator-ed37a',
+  storageBucket: 'wages-calculator-ed37a.firebasestorage.app',
+  messagingSenderId: '637759007582',
+  appId: '1:637759007582:web:627af08a467a55517c3dcf'
 }
 
 // Initialize Firebase
