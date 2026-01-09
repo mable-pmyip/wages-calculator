@@ -102,6 +102,8 @@ const ClearButton = styled.button`
 export const BulkModeControls = ({ selectedDays, onOpenBulkModal, onClearSelection }: BulkModeControlsProps) => {
   if (selectedDays.length === 0) return null
 
+  console.log('hello')
+
   return (
     <Container>
       <ButtonGroup>
