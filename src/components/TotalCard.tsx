@@ -114,7 +114,7 @@ export const TotalCard = ({ currentMonth, monthTotal, monthTotalHours, financial
           </TotalLabel>
           <TotalAmountLarge>${monthTotal.toFixed(2)}</TotalAmountLarge>
           <TotalSubtitle>Monthly Total{deductMPF && ' (MPF Deducted)'}</TotalSubtitle>
-          <TotalHours>{monthTotalHours.toFixed(2)} work hours</TotalHours>
+          <TotalHours>{monthTotalHours.toFixed(1)} work hours</TotalHours>
         </TotalSection>
         
         <TotalDivider />
@@ -125,7 +125,7 @@ export const TotalCard = ({ currentMonth, monthTotal, monthTotalHours, financial
           <TotalSubtitle>
             Financial Year Total{deductMPF && ' (MPF Deducted)'}
           </TotalSubtitle>
-          <TotalHours>{yearTotalHours.toFixed(2)} work hours</TotalHours>
+          <TotalHours>{yearTotalHours.toFixed(1)} work hours</TotalHours>
         </TotalSection>
       </TotalsGrid>
     </Card>
