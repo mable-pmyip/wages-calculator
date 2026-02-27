@@ -140,6 +140,8 @@ const Summary = styled.div`
   color: #000;
   font-weight: 700;
   box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);
+  flex-wrap: wrap;
+  gap: 0.75rem;
 
   @media (max-width: 640px) {
     padding: 0.75rem 1rem;
@@ -283,6 +285,9 @@ export const WorkTypeModal = ({ workType, entries, total, onClose }: WorkTypeMod
     })
   }
 
+  // Calculate total hours
+  const totalHours = entries.reduce((sum, entry) => sum + entry.hoursWorked, 0)
+
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -293,17 +298,19 @@ export const WorkTypeModal = ({ workType, entries, total, onClose }: WorkTypeMod
         <ModalBody>
           <Summary>
             <span>{entries.length} {entries.length === 1 ? 'entry' : 'entries'}</span>
+            <span>{totalHours.toFixed(2)} hours</span>
             <span>Total: ${total.toFixed(2)}</span>
           </Summary>
           <EntriesList>
             {sortedDates.map(date => {
               const dateEntries = entriesByDate[date]
               const dateTotal = dateEntries.reduce((sum, entry) => sum + entry.totalWages, 0)
+              const dateHours = dateEntries.reduce((sum, entry) => sum + entry.hoursWorked, 0)
               
               return (
                 <DateGroup key={date}>
                   <DateGroupHeader>
-                    <DateLabel>{formatDate(date)}</DateLabel>
+                    <DateLabel>{formatDate(date)} ({dateHours.toFixed(2)} hrs)</DateLabel>
                     <EntrySubtotalBadge>${dateTotal.toFixed(2)}</EntrySubtotalBadge>
                   </DateGroupHeader>
                   {dateEntries.map(entry => (

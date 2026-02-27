@@ -211,6 +211,12 @@ const LegendValue = styled.div`
     font-size: 1rem;
   }
 
+  .hours {
+    font-size: 0.75rem;
+    color: #fbbf24;
+    font-weight: 600;
+  }
+
   .percentage {
     font-size: 0.75rem;
     color: #a0a0a0;
@@ -219,6 +225,10 @@ const LegendValue = styled.div`
   @media (max-width: 640px) {
     .amount {
       font-size: 0.9rem;
+    }
+
+    .hours {
+      font-size: 0.7rem;
     }
 
     .percentage {
@@ -333,19 +343,23 @@ export const WagesAnalysis = ({ currentMonth, workTypeData, isYearly = false, ye
                     })}
                   </PieChartSvg>
                   <Legend>
-                    {workTypeDataFinal.map(data => (
-                      <LegendItem 
-                        key={data.workType}
-                        onClick={() => setSelectedWorkType(data.workType)}
-                      >
-                        <LegendColor $color={data.color} />
-                        <LegendLabel>{data.workType}</LegendLabel>
-                        <LegendValue>
-                          <div className="amount">${data.total.toFixed(2)}</div>
-                          <div className="percentage">{data.percentage.toFixed(1)}%</div>
-                        </LegendValue>
-                      </LegendItem>
-                    ))}
+                    {workTypeDataFinal.map(data => {
+                      const totalHours = data.entries.reduce((sum, entry) => sum + entry.hoursWorked, 0)
+                      return (
+                        <LegendItem 
+                          key={data.workType}
+                          onClick={() => setSelectedWorkType(data.workType)}
+                        >
+                          <LegendColor $color={data.color} />
+                          <LegendLabel>{data.workType}</LegendLabel>
+                          <LegendValue>
+                            <div className="amount">${data.total.toFixed(2)}</div>
+                            <div className="hours">{totalHours.toFixed(2)} hrs</div>
+                            <div className="percentage">{data.percentage.toFixed(1)}%</div>
+                          </LegendValue>
+                        </LegendItem>
+                      )
+                    })}
                   </Legend>
                 </PieChartWrapper>
               </PieChartContainer>
