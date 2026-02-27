@@ -3,8 +3,10 @@ import styled from 'styled-components'
 interface TotalCardProps {
   currentMonth: Date
   monthTotal: number
+  monthTotalHours: number
   financialYearLabel: string
   yearTotal: number
+  yearTotalHours: number
   deductMPF: boolean
 }
 
@@ -90,7 +92,19 @@ const TotalSubtitle = styled.div`
   }
 `
 
-export const TotalCard = ({ currentMonth, monthTotal, financialYearLabel, yearTotal, deductMPF }: TotalCardProps) => {
+const TotalHours = styled.div`
+  font-size: 0.95rem;
+  color: #fbbf24;
+  font-weight: 600;
+  margin-top: 0.5rem;
+
+  @media (max-width: 640px) {
+    font-size: 0.75rem;
+    margin-top: 0.35rem;
+  }
+`
+
+export const TotalCard = ({ currentMonth, monthTotal, monthTotalHours, financialYearLabel, yearTotal, yearTotalHours, deductMPF }: TotalCardProps) => {
   return (
     <Card>
       <TotalsGrid>
@@ -100,6 +114,7 @@ export const TotalCard = ({ currentMonth, monthTotal, financialYearLabel, yearTo
           </TotalLabel>
           <TotalAmountLarge>${monthTotal.toFixed(2)}</TotalAmountLarge>
           <TotalSubtitle>Monthly Total{deductMPF && ' (MPF Deducted)'}</TotalSubtitle>
+          <TotalHours>{monthTotalHours.toFixed(2)} work hours</TotalHours>
         </TotalSection>
         
         <TotalDivider />
@@ -110,6 +125,7 @@ export const TotalCard = ({ currentMonth, monthTotal, financialYearLabel, yearTo
           <TotalSubtitle>
             Financial Year Total{deductMPF && ' (MPF Deducted)'}
           </TotalSubtitle>
+          <TotalHours>{yearTotalHours.toFixed(2)} work hours</TotalHours>
         </TotalSection>
       </TotalsGrid>
     </Card>

@@ -204,6 +204,7 @@ function App() {
   })
 
   const monthTotalGross = monthEntries.reduce((sum, entry) => sum + entry.totalWages, 0)
+  const monthTotalHours = monthEntries.reduce((sum, entry) => sum + entry.hoursWorked, 0)
 
   // Financial year runs from April 1 to March 31
   // If current month is Jan-Mar (0-2), FY is (currentYear-1)/(currentYear)
@@ -226,6 +227,7 @@ function App() {
   })
 
   const yearTotalGross = yearEntries.reduce((sum, entry) => sum + entry.totalWages, 0)
+  const yearTotalHours = yearEntries.reduce((sum, entry) => sum + entry.hoursWorked, 0)
 
   // Transform entries to MPFWorkEntry format for MPF calculation
   // Group by work type for accurate MPF calculation
@@ -340,8 +342,10 @@ function App() {
         <TotalCard
           currentMonth={currentMonth}
           monthTotal={monthTotal}
+          monthTotalHours={monthTotalHours}
           financialYearLabel={financialYearLabel}
           yearTotal={yearTotal}
+          yearTotalHours={yearTotalHours}
           deductMPF={settings.deductMPF}
         />
 
